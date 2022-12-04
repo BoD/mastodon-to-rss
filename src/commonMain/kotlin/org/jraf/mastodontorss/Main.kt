@@ -31,9 +31,8 @@ import io.ktor.http.withCharset
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.application.install
+import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
-import io.ktor.server.plugins.defaultheaders.DefaultHeaders
 import io.ktor.server.plugins.origin
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.host
@@ -42,33 +41,21 @@ import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
-import org.redundent.kotlin.xml.PrintOptions
-import org.redundent.kotlin.xml.xml
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.Locale
+import io.ktor.utils.io.charsets.Charsets
 
-private const val DEFAULT_PORT = 8080
-
-private const val ENV_PORT = "PORT"
+private const val PORT = 8080
 
 private const val PATH_LIST_ID = "listId"
 
 private const val PARAM_SERVER = "server"
 private const val PARAM_BEARER_TOKEN = "bearerToken"
 
-private val PUB_DATE_FORMAT = DateTimeFormatter.ofPattern("EEE, d MMM yyyy HH:mm:ss 'Z'", Locale.US)
-
 fun main() {
-  val listenPort = System.getenv(ENV_PORT)?.toInt() ?: DEFAULT_PORT
-  embeddedServer(Netty, listenPort, module = Application::mastodonToRssModule).start(wait = true)
+  val listenPort = PORT
+  embeddedServer(CIO, listenPort, module = Application::mastodonToRssModule).start(wait = true)
 }
 
 private fun Application.mastodonToRssModule() {
-  install(DefaultHeaders)
-
   install(StatusPages) {
     status(HttpStatusCode.NotFound) { call, status ->
       call.respondText(
@@ -123,31 +110,32 @@ private suspend fun getRss(
     bearerToken = bearerToken,
   )
   val posts = mastodonClient.getPosts(listId)
+  return posts.map { it.id }.joinToString()
 
-  return xml("rss") {
-    includeXmlProlog = true
-    attribute("version", "2.0")
-    "channel" {
-      "title" { -"Posts for list $listId" }
-      "description" { -"Posts for list $listId" }
-      "link" { -selfLink }
-      "ttl" { -"60" }
-      for (post in posts.filterNot { it.isReblog }) {
-        "item" {
-          "link" { -post.url }
-          "guid" {
-            attribute("isPermaLink", "true")
-            -post.url
-          }
-          "pubDate" { -formatPubDate(post.createdAt) }
-          // Slack RSS bot already fetches the text from the link, so it's not necessary to include it here
-//                    "description" { -post.text }
-        }
-      }
-    }
-  }.toString(PrintOptions(singleLineTextElements = true, indent = "  "))
+//  return xml("rss") {
+//    includeXmlProlog = true
+//    attribute("version", "2.0")
+//    "channel" {
+//      "title" { -"Posts for list $listId" }
+//      "description" { -"Posts for list $listId" }
+//      "link" { -selfLink }
+//      "ttl" { -"60" }
+//      for (post in posts) {
+//        "item" {
+//          "link" { -post.url }
+//          "guid" {
+//            attribute("isPermaLink", "true")
+//            -post.url
+//          }
+//          "pubDate" { -formatPubDate(post.createdAt) }
+//          // Slack RSS bot already fetches the text from the link, so it's not necessary to include it here
+////                    "description" { -post.text }
+//        }
+//      }
+//    }
+//  }.toString(PrintOptions(singleLineTextElements = true, indent = "  "))
 }
 
-private fun formatPubDate(date: Date): String =
-  PUB_DATE_FORMAT.format(LocalDateTime.ofInstant(date.toInstant(), ZoneId.of("GMT")))
+//private fun formatPubDate(date: Date): String =
+//  PUB_DATE_FORMAT.format(LocalDateTime.ofInstant(date.toInstant(), ZoneId.of("GMT")))
 

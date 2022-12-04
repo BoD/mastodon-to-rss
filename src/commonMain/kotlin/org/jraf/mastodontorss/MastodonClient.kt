@@ -34,13 +34,8 @@ import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import org.slf4j.LoggerFactory
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
-private var LOGGER = LoggerFactory.getLogger(MastodonClient::class.java)
+import org.jraf.mastodontorss.util.logd
+import org.jraf.mastodontorss.util.logw
 
 class MastodonClient(
   private val server: String,
@@ -50,38 +45,34 @@ class MastodonClient(
     HttpClient {
       install(ContentNegotiation) {
         json(Json {
-//          @OptIn(ExperimentalSerializationApi::class)
-//          explicitNulls = false
           ignoreUnknownKeys = true
         })
       }
     }
   }
 
-  @Throws(MastodonClientException::class)
   suspend fun getPosts(
     listId: Long,
   ): List<Post> {
     return try {
-      LOGGER.debug("Checking for new posts in list $listId")
+      logd("Checking for new posts in list $listId")
       val statusList: List<MastodonStatus> = httpClient.get("https://$server/api/v1/timelines/list/$listId") {
         bearerAuth(bearerToken)
         accept(ContentType.Application.Json)
       }.body()
 
       if (statusList.isEmpty()) {
-        LOGGER.debug("No posts")
+        logd("No posts")
       }
       statusList.map {
         Post(
           id = it.id,
           url = it.uri,
-          createdAt = CREATED_AT_DATE_FORMAT.parse(it.created_at.dropLast(1) + "UTC"),
-          isReblog = it.reblog != null,
+//          createdAt = CREATED_AT_DATE_FORMAT.parse(it.created_at.dropLast(1) + "UTC"),
         )
       }
     } catch (e: Exception) {
-      LOGGER.warn("Could not retrieve posts", e)
+      logw(e, "Could not retrieve posts")
       throw MastodonClientException(e)
     }
   }
@@ -89,7 +80,7 @@ class MastodonClient(
 
 class MastodonClientException(cause: Exception) : Throwable(cause.message, cause)
 
-private val CREATED_AT_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US)
+//private val CREATED_AT_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US)
 
 @Serializable
 @Suppress("PropertyName")
@@ -97,12 +88,10 @@ private data class MastodonStatus(
   val id: String,
   val created_at: String,
   val uri: String,
-  val reblog: JsonObject?,
 )
 
 data class Post(
   val id: String,
   val url: String,
-  val createdAt: Date,
-  val isReblog: Boolean,
+//  val createdAt: Date,
 )
