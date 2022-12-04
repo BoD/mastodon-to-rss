@@ -34,6 +34,7 @@ import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -76,6 +77,7 @@ class MastodonClient(
           id = it.id,
           url = it.uri,
           createdAt = CREATED_AT_DATE_FORMAT.parse(it.created_at.dropLast(1) + "UTC"),
+          isReblog = it.reblog != null,
         )
       }
     } catch (e: Exception) {
@@ -95,10 +97,12 @@ private data class MastodonStatus(
   val id: String,
   val created_at: String,
   val uri: String,
+  val reblog: JsonObject?,
 )
 
 data class Post(
   val id: String,
   val url: String,
   val createdAt: Date,
+  val isReblog: Boolean,
 )

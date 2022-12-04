@@ -132,7 +132,7 @@ private suspend fun getRss(
       "description" { -"Posts for list $listId" }
       "link" { -selfLink }
       "ttl" { -"60" }
-      for (post in posts) {
+      for (post in posts.filterNot { it.isReblog }) {
         "item" {
           "link" { -post.url }
           "guid" {
