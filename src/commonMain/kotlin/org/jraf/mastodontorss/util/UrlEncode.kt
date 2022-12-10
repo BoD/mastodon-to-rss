@@ -26,7 +26,7 @@
 package org.jraf.mastodontorss.util
 
 fun String.escapeXml(): String = buildString {
-  forEach { c ->
+  this@escapeXml.forEach { c ->
     when (c) {
       '<' -> append("&lt;")
       '>' -> append("&gt;")
