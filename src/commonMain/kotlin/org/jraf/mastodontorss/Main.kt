@@ -43,7 +43,9 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.utils.io.charsets.Charsets
-import org.jraf.mastodontorss.util.escapeXml
+import org.jraf.mastodontorss.atom.Atom
+import org.jraf.mastodontorss.mastodon.MastodonClient
+import org.jraf.mastodontorss.mastodon.MastodonClientException
 
 private const val PORT = 8080
 
@@ -84,49 +86,28 @@ private fun Application.mastodonToRssModule() {
       val bearerToken = call.request.queryParameters[PARAM_BEARER_TOKEN] ?: throw IllegalArgumentException("Missing $PARAM_BEARER_TOKEN")
 
       val selfLink =
-        URLBuilder("${call.request.origin.scheme}://${call.request.headers["Host"] ?: call.request.host() + if (call.request.port() == 80) "" else ":${call.request.port()}"}${call.request.uri}")
+        URLBuilder("${call.request.origin.scheme}://${call.request.headers["Host"] ?: (call.request.host() + if (call.request.port() == 80) "" else ":${call.request.port()}")}${call.request.uri}")
           .buildString()
+      val mastodonClient = MastodonClient(
+        server = server,
+        bearerToken = bearerToken,
+      )
+      val mastodonPosts = mastodonClient.getPosts(listId)
+      val atomPosts = mastodonPosts.map { post ->
+        Atom.Post(
+          url = post.url,
+          updated = post.createdAt,
+        )
+      }
+      val atomText = Atom(
+        title = "Mastodon list $listId",
+        selfLink = selfLink,
+        posts = atomPosts,
+      ).getText()
       call.respondText(
-        getAtom(
-          selfLink = selfLink,
-          server = server,
-          bearerToken = bearerToken,
-          listId = listId,
-        ),
+        atomText,
         ContentType.Application.Atom.withCharset(Charsets.UTF_8)
       )
     }
   }
-}
-
-private suspend fun getAtom(
-  selfLink: String,
-  server: String,
-  bearerToken: String,
-  listId: String,
-): String {
-  val mastodonClient = MastodonClient(
-    server = server,
-    bearerToken = bearerToken,
-  )
-  val posts = mastodonClient.getPosts(listId)
-  return """<?xml version="1.0" encoding="utf-8"?>
-    <feed xmlns="http://www.w3.org/2005/Atom">
-      <title>Mastodon list $listId</title>
-      <link href="${selfLink.escapeXml()}" rel="self"/>
-      <id>${selfLink.escapeXml()}</id>
-      <updated>${posts.firstOrNull()?.createdAt}</updated>
-      ${
-    posts.joinToString(separator = "\n") { post ->
-      """
-        <entry>
-          <link href="${post.url.escapeXml()}" />
-          <id>${post.url.escapeXml()}</id>
-          <updated>${post.createdAt}</updated>
-        </entry>
-      """.trimIndent()
-    }
-  }
-    </feed>
-  """.trimIndent()
 }
