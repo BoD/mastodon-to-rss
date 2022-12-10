@@ -71,14 +71,14 @@ class MastodonClient(
           isReblog = it.reblog != null,
         )
       }
-    } catch (e: Exception) {
-      logw(e, "Could not retrieve posts")
-      throw MastodonClientException(e)
+    } catch (t: Throwable) {
+      logw(t, "Could not retrieve posts")
+      throw MastodonClientException(t)
     }
   }
 }
 
-class MastodonClientException(cause: Exception) : Throwable(cause.message, cause)
+class MastodonClientException(cause: Throwable) : Throwable(cause.message, cause)
 
 @Serializable
 @Suppress("PropertyName")

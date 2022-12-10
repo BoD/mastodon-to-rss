@@ -1,6 +1,9 @@
 name: pr
 
-on: pull_request
+on:
+  push:
+    branches:
+      - master
 
 concurrency:
   group: ${{ github.head_ref }}

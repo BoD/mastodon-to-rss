@@ -29,6 +29,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.withCharset
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
@@ -63,18 +64,16 @@ private fun Application.mastodonToRssModule() {
   install(StatusPages) {
     status(HttpStatusCode.NotFound) { call, status ->
       call.respondText(
-        text = "Usage: ${call.request.local.scheme}://${call.request.local.host}:${call.request.local.port}//<$PATH_LIST_ID>",
+        text = "Usage: ${call.request.origin.scheme}://${call.request.host()}${call.portStr()}//<$PATH_LIST_ID>",
         status = status
       )
     }
 
-    exception<IllegalArgumentException> { call, exception ->
-      call.respond(HttpStatusCode.BadRequest, exception.message ?: "Bad request")
-    }
     exception<MastodonClientException> { call, exception ->
-      call.respond(
-        HttpStatusCode.BadRequest, exception.message ?: "Could not retrieve the list's tweets"
-      )
+      call.respond(HttpStatusCode.BadRequest, "Could not retrieve the list's posts: " + (exception.message ?: "unknown error"))
+    }
+    exception<IllegalArgumentException> { call, exception ->
+      call.respond(HttpStatusCode.BadRequest, "Bad request: " + (exception.message ?: "unknown error"))
     }
   }
 
@@ -85,9 +84,7 @@ private fun Application.mastodonToRssModule() {
       val server = call.request.queryParameters[PARAM_SERVER] ?: throw IllegalArgumentException("Missing $PARAM_SERVER")
       val bearerToken = call.request.queryParameters[PARAM_BEARER_TOKEN] ?: throw IllegalArgumentException("Missing $PARAM_BEARER_TOKEN")
 
-      val selfLink =
-        URLBuilder("${call.request.origin.scheme}://${call.request.headers["Host"] ?: (call.request.host() + if (call.request.port() == 80) "" else ":${call.request.port()}")}${call.request.uri}")
-          .buildString()
+      val selfLink = URLBuilder("${call.request.origin.scheme}://${call.request.host()}${call.portStr()}${call.request.uri}").buildString()
       val mastodonClient = MastodonClient(
         server = server,
         bearerToken = bearerToken,
@@ -111,3 +108,5 @@ private fun Application.mastodonToRssModule() {
     }
   }
 }
+
+private fun ApplicationCall.portStr() = request.port().let { if (it == 80) "" else ":$it" }
