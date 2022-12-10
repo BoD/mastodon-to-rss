@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2021 Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2022-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,18 +76,19 @@ private fun Application.mastodonToRssModule() {
 
   routing {
     get("{$PATH_LIST_ID}") {
-      val listId =
-        call.parameters[PATH_LIST_ID]?.toLongOrNull() ?: throw IllegalArgumentException("Invalid list ID")
+      val listId = call.parameters[PATH_LIST_ID] ?: throw IllegalArgumentException("Missing $PATH_LIST_ID")
 
-      val server = call.request.queryParameters[PARAM_SERVER] ?: throw IllegalArgumentException("Missing server")
-      val bearerToken = call.request.queryParameters[PARAM_BEARER_TOKEN] ?: throw IllegalArgumentException("Missing bearerToken")
+      val server = call.request.queryParameters[PARAM_SERVER] ?: throw IllegalArgumentException("Missing $PARAM_SERVER")
+      val bearerToken = call.request.queryParameters[PARAM_BEARER_TOKEN] ?: throw IllegalArgumentException("Missing $PARAM_BEARER_TOKEN")
 
       val selfLink =
         URLBuilder("${call.request.origin.scheme}://${call.request.host()}${call.request.uri}").apply {
-          parameters.append(PARAM_BEARER_TOKEN, bearerToken)
+          call.request.queryParameters.forEach { key, values ->
+            parameters.append(key, values[0])
+          }
         }.buildString()
       call.respondText(
-        getRss(
+        getAtom(
           selfLink = selfLink,
           server = server,
           bearerToken = bearerToken,
@@ -99,43 +100,34 @@ private fun Application.mastodonToRssModule() {
   }
 }
 
-private suspend fun getRss(
+private suspend fun getAtom(
   selfLink: String,
   server: String,
   bearerToken: String,
-  listId: Long,
+  listId: String,
 ): String {
   val mastodonClient = MastodonClient(
     server = server,
     bearerToken = bearerToken,
   )
   val posts = mastodonClient.getPosts(listId)
-  return posts.map { it.id }.joinToString()
-
-//  return xml("rss") {
-//    includeXmlProlog = true
-//    attribute("version", "2.0")
-//    "channel" {
-//      "title" { -"Posts for list $listId" }
-//      "description" { -"Posts for list $listId" }
-//      "link" { -selfLink }
-//      "ttl" { -"60" }
-//      for (post in posts) {
-//        "item" {
-//          "link" { -post.url }
-//          "guid" {
-//            attribute("isPermaLink", "true")
-//            -post.url
-//          }
-//          "pubDate" { -formatPubDate(post.createdAt) }
-//          // Slack RSS bot already fetches the text from the link, so it's not necessary to include it here
-////                    "description" { -post.text }
-//        }
-//      }
-//    }
-//  }.toString(PrintOptions(singleLineTextElements = true, indent = "  "))
+  return """
+    <?xml version="1.0" encoding="utf-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>Mastodon list $listId</title>
+      <link href="$selfLink" rel="self"/>
+      <updated>${posts.firstOrNull()?.createdAt}</updated>
+      ${
+    posts.joinToString(separator = "\n") { post ->
+      """
+        <entry>
+          <link href="${post.url}" rel="alternate" type="text/html" />
+          <id>${post.url}</id>
+          <updated>${post.createdAt}</updated>
+        </entry>
+      """.trimIndent()
+    }
+  }
+    </feed>
+  """.trimIndent()
 }
-
-//private fun formatPubDate(date: Date): String =
-//  PUB_DATE_FORMAT.format(LocalDateTime.ofInstant(date.toInstant(), ZoneId.of("GMT")))
-

@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2021 Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2022-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.jraf.mastodontorss.util.logd
 import org.jraf.mastodontorss.util.logw
 
@@ -51,9 +52,7 @@ class MastodonClient(
     }
   }
 
-  suspend fun getPosts(
-    listId: Long,
-  ): List<Post> {
+  suspend fun getPosts(listId: String): List<Post> {
     return try {
       logd("Checking for new posts in list $listId")
       val statusList: List<MastodonStatus> = httpClient.get("https://$server/api/v1/timelines/list/$listId") {
@@ -68,7 +67,8 @@ class MastodonClient(
         Post(
           id = it.id,
           url = it.uri,
-//          createdAt = CREATED_AT_DATE_FORMAT.parse(it.created_at.dropLast(1) + "UTC"),
+          createdAt = it.created_at,
+          isReblog = it.reblog != null,
         )
       }
     } catch (e: Exception) {
@@ -80,18 +80,18 @@ class MastodonClient(
 
 class MastodonClientException(cause: Exception) : Throwable(cause.message, cause)
 
-//private val CREATED_AT_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US)
-
 @Serializable
 @Suppress("PropertyName")
 private data class MastodonStatus(
   val id: String,
   val created_at: String,
   val uri: String,
+  val reblog: JsonObject?,
 )
 
 data class Post(
   val id: String,
   val url: String,
-//  val createdAt: Date,
+  val createdAt: String,
+  val isReblog: Boolean,
 )
