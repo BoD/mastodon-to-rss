@@ -17,7 +17,7 @@ jobs:
           java-version: 11
       - uses: gradle/gradle-build-action@0d13054264b0bb894ded474f08ebb30921341cee #v2.1.4
       - name: Install cURL Headers
-        run: sudo apt-get update && sudo apt-get install libcurl4-openssl-dev
+        run: sudo apt-get update && sudo apt-get install libcurl3-openssl-dev
       - name: Build with Gradle
         run: ./gradlew linkDebugExecutableLinuxX64 linkReleaseExecutableLinuxX64
       - uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 #v3
