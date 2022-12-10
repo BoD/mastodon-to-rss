@@ -42,6 +42,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.utils.io.charsets.Charsets
+import org.jraf.mastodontorss.util.urlEncoded
 
 private const val PORT = 8080
 
@@ -114,14 +115,14 @@ private suspend fun getAtom(
   return """<?xml version="1.0" encoding="utf-8"?>
     <feed xmlns="http://www.w3.org/2005/Atom">
       <title>Mastodon list $listId</title>
-      <link href="$selfLink" rel="self"/>
+      <link href="${selfLink.urlEncoded()}" rel="self"/>
       <updated>${posts.firstOrNull()?.createdAt}</updated>
       ${
     posts.joinToString(separator = "\n") { post ->
       """
         <entry>
-          <link href="${post.url}" rel="alternate" type="text/html" />
-          <id>${post.url}</id>
+          <link href="${post.url.urlEncoded()}" />
+          <id>${post.url.urlEncoded()}</id>
           <updated>${post.createdAt}</updated>
         </entry>
       """.trimIndent()
