@@ -36,6 +36,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.origin
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.host
+import io.ktor.server.request.port
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
@@ -83,11 +84,8 @@ private fun Application.mastodonToRssModule() {
       val bearerToken = call.request.queryParameters[PARAM_BEARER_TOKEN] ?: throw IllegalArgumentException("Missing $PARAM_BEARER_TOKEN")
 
       val selfLink =
-        URLBuilder("${call.request.origin.scheme}://${call.request.host()}${call.request.uri}").apply {
-          call.request.queryParameters.forEach { key, values ->
-            parameters.append(key, values[0])
-          }
-        }.buildString()
+        URLBuilder("${call.request.origin.scheme}://${call.request.headers["Host"] ?: call.request.host() + if (call.request.port() == 80) "" else ":${call.request.port()}"}${call.request.uri}")
+          .buildString()
       call.respondText(
         getAtom(
           selfLink = selfLink,
@@ -95,7 +93,7 @@ private fun Application.mastodonToRssModule() {
           bearerToken = bearerToken,
           listId = listId,
         ),
-        ContentType.Application.Rss.withCharset(Charsets.UTF_8)
+        ContentType.Application.Atom.withCharset(Charsets.UTF_8)
       )
     }
   }
@@ -116,6 +114,7 @@ private suspend fun getAtom(
     <feed xmlns="http://www.w3.org/2005/Atom">
       <title>Mastodon list $listId</title>
       <link href="${selfLink.escapeXml()}" rel="self"/>
+      <id>${selfLink.escapeXml()}</id>
       <updated>${posts.firstOrNull()?.createdAt}</updated>
       ${
     posts.joinToString(separator = "\n") { post ->
