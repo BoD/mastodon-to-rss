@@ -111,8 +111,7 @@ private suspend fun getAtom(
     bearerToken = bearerToken,
   )
   val posts = mastodonClient.getPosts(listId)
-  return """
-    <?xml version="1.0" encoding="utf-8"?>
+  return """<?xml version="1.0" encoding="utf-8"?>
     <feed xmlns="http://www.w3.org/2005/Atom">
       <title>Mastodon list $listId</title>
       <link href="$selfLink" rel="self"/>
