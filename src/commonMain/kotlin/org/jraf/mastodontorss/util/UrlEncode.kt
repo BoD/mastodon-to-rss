@@ -25,18 +25,15 @@
 
 package org.jraf.mastodontorss.util
 
-private const val RESERVED_CHARS = " !#\$&'\"()*+,/:;=?@[]{}"
-
-fun String.urlEncoded(): String = buildString {
+fun String.escapeXml(): String = buildString {
   forEach { c ->
-    if (c in RESERVED_CHARS) {
-      append(c.percentEncode())
-    } else {
-      append(c)
+    when (c) {
+      '<' -> append("&lt;")
+      '>' -> append("&gt;")
+      '&' -> append("&amp;")
+      '\'' -> append("&apos;")
+      '"' -> append("&quot;")
+      else -> append(c)
     }
   }
-}
-
-private fun Char.percentEncode(): String {
-  return "%${code.toString(16)}".uppercase()
 }
