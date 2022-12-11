@@ -89,7 +89,7 @@ private fun Application.mastodonToRssModule() {
         server = server,
         bearerToken = bearerToken,
       )
-      val mastodonPosts = mastodonClient.getPosts(listId)
+      val mastodonPosts = mastodonClient.getPosts(listId).filterNot { it.isReblog }
       val atomPosts = mastodonPosts.map { post ->
         Atom.Post(
           url = post.url,
