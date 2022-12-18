@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2022 Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2022-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,11 +23,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import org.junit.Test
+package org.jraf.mastodontorss.util
 
-class Main {
-  @Test
-  fun main() {
-    org.jraf.mastodontorss.main()
-  }
+import kotlin.native.internal.GC
+
+actual fun gc() {
+  GC.collect()
 }
