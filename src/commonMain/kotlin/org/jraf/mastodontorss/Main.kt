@@ -47,6 +47,7 @@ import io.ktor.utils.io.charsets.Charsets
 import org.jraf.mastodontorss.atom.Atom
 import org.jraf.mastodontorss.mastodon.MastodonClient
 import org.jraf.mastodontorss.mastodon.MastodonClientException
+import org.jraf.mastodontorss.util.exitProcess
 import org.jraf.mastodontorss.util.gc
 
 private const val PORT = 8080
@@ -62,6 +63,8 @@ fun main() {
 }
 
 private fun Application.mastodonToRssModule() {
+  var counter: Int = 0
+
   install(StatusPages) {
     status(HttpStatusCode.NotFound) { call, status ->
       call.respondText(
@@ -107,6 +110,12 @@ private fun Application.mastodonToRssModule() {
         ContentType.Application.Atom.withCharset(Charsets.UTF_8)
       )
       gc()
+
+      // See https://youtrack.jetbrains.com/issue/KTOR-4288/Non-heap-memory-leak-when-making-a-request-and-closing-a-client
+      counter++
+      if (counter == 100) {
+        exitProcess(-1)
+      }
     }
   }
 }
