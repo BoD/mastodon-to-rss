@@ -30,7 +30,6 @@ import io.ktor.http.URLBuilder
 import io.ktor.http.withCharset
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
@@ -69,7 +68,7 @@ private fun Application.mastodonToRssModule() {
     status(HttpStatusCode.NotFound) { call, status ->
       call.respondText(
         text = "Usage: ${call.request.origin.scheme}://${call.request.host()}${call.portStr()}//<$PATH_LIST_ID>",
-        status = status
+        status = status,
       )
     }
 
@@ -107,7 +106,7 @@ private fun Application.mastodonToRssModule() {
       ).getText()
       call.respondText(
         atomText,
-        ContentType.Application.Atom.withCharset(Charsets.UTF_8)
+        ContentType.Application.Atom.withCharset(Charsets.UTF_8),
       )
       gc()
 
