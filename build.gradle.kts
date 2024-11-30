@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
@@ -14,11 +15,9 @@ repositories {
 
 kotlin {
   jvm {
-    compilations.all {
-      kotlinOptions {
-        jvmTarget = "1.8"
+    compilerOptions {
+      jvmTarget.set(JvmTarget.JVM_11)
       }
-    }
   }
   macosArm64 {
     binaries {
@@ -36,8 +35,6 @@ kotlin {
   }
 
   sourceSets {
-    val nativeMain by creating
-
     val commonMain by getting {
       dependencies {
         implementation(Ktor.server.core)
@@ -50,13 +47,11 @@ kotlin {
       }
     }
     val macosArm64Main by getting {
-      dependsOn(nativeMain)
       dependencies {
         implementation(Ktor.client.curl)
       }
     }
     val linuxX64Main by getting {
-      dependsOn(nativeMain)
       dependencies {
         implementation(Ktor.client.curl)
       }

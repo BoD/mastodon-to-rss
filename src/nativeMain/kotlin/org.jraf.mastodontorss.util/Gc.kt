@@ -25,8 +25,10 @@
 
 package org.jraf.mastodontorss.util
 
-import kotlin.native.internal.GC
+import kotlin.native.runtime.GC
+import kotlin.native.runtime.NativeRuntimeApi
 
+@OptIn(NativeRuntimeApi::class)
 actual fun gc() {
   GC.collect()
 }
