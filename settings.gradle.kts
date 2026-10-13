@@ -1,6 +1,22 @@
-plugins {
-    // See https://jmfayard.github.io/refreshVersions
-    id("de.fayard.refreshVersions") version "0.50.2"
-}
 rootProject.name = "mastodon-to-rss"
+
+pluginManagement {
+  repositories {
+    mavenCentral()
+    gradlePluginPortal()
+  }
+}
+
+dependencyResolutionManagement {
+  @Suppress("UnstableApiUsage")
+  repositories {
+    mavenCentral()
+    mavenLocal()
+  }
+}
+
+plugins {
+  // See https://splitties.github.io/refreshVersions/
+  id("de.fayard.refreshVersions").version("0.60.6")
+}
 

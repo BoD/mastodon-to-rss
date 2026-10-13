@@ -1,9 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
-  kotlin("multiplatform")
-  kotlin("plugin.serialization")
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.kotlin.serialization)
 }
 
 group = "org.jraf"
@@ -16,8 +15,8 @@ repositories {
 kotlin {
   jvm {
     compilerOptions {
-      jvmTarget.set(JvmTarget.JVM_11)
-      }
+      jvmTarget.set(JvmTarget.JVM_25)
+    }
   }
   macosArm64 {
     binaries {
@@ -35,44 +34,37 @@ kotlin {
   }
 
   sourceSets {
-    val commonMain by getting {
+    commonMain {
       dependencies {
-        implementation(Ktor.server.core)
-        implementation(Ktor.server.cio)
-        implementation(Ktor.server.statusPages)
-        implementation(Ktor.client.core)
-        implementation(Ktor.client.contentNegotiation)
-        implementation(KotlinX.serialization.json)
-        implementation(Ktor.plugins.serialization.kotlinx.json)
+        implementation(libs.ktor.server.core)
+        implementation(libs.ktor.server.cio)
+        implementation(libs.ktor.server.statusPages)
+        implementation(libs.ktor.client.core)
+        implementation(libs.ktor.client.contentNegotiation)
+        implementation(libs.kotlinx.serialization.json)
+        implementation(libs.ktor.serialization.kotlinx.json)
       }
     }
-    val macosArm64Main by getting {
+    macosArm64Main {
       dependencies {
-        implementation(Ktor.client.curl)
+        implementation(libs.ktor.client.curl)
       }
     }
-    val linuxX64Main by getting {
+    linuxX64Main {
       dependencies {
-        implementation(Ktor.client.curl)
+        implementation(libs.ktor.client.curl)
       }
     }
-    val jvmMain by getting {
+    jvmMain {
       dependencies {
-        implementation(Ktor.client.okHttp)
+        implementation(libs.ktor.client.okhttp)
       }
     }
 
-    val jvmTest by getting {
+    jvmTest {
       dependencies {
-        implementation(Kotlin.test.junit)
+        implementation(libs.kotlin.test.junit)
       }
-    }
-  }
-
-  // See https://kotlinlang.org/docs/native-memory-manager.html#memory-consumption
-  targets.withType<KotlinNativeTarget> {
-    binaries.all {
-      freeCompilerArgs = freeCompilerArgs + "-Xallocator=std"
     }
   }
 }

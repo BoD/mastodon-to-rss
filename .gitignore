@@ -6,7 +6,10 @@ build
 captures
 .externalNativeBuild
 .cxx
+.kotlin
 
 .idea/*
 !.idea/codeStyles/
 !.idea/copyright/
+
+versions.properties
